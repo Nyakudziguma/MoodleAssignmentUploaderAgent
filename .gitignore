@@ -2,3 +2,7 @@ files
 /files
 venv/
 venv
+dist/
+build/
+/dist
+/build
