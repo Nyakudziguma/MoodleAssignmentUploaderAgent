@@ -1,0 +1,94 @@
+============================================================
+MOODLE ASSIGNMENT UPLOAD REPORT
+============================================================
+
+Timestamp: 2025-09-08 18:46:09
+Moodle URL: http://myaoc1.accsoncall.com
+Course ID: 96
+Assignment ID: 4375
+Folder: /home/bundex/Documents/myaoc_automation/files
+
+Total files processed: 1
+Successful uploads: 1
+Failed uploads: 0
+Success rate: 100.0%
+
+============================================================
+✅ SUCCESSFUL UPLOADS (1):
+--------------------------------------------------
+ 1. Username: aoc24003 (aoc24003.pdf)
+
+============================================================
+PROCESS LOG:
+--------------------------------------------------
+[18:42:03] Configuration loaded successfully!
+[18:42:22] Setting up Chrome WebDriver...
+[18:42:24] Logging in...
+[18:42:46] Login successful.
+[18:42:46] Navigating to grading page: http://myaoc1.accsoncall.com/mod/assign/view.php?id=4375&action=grading
+[18:43:19]   Waiting for grading table to load...
+[18:43:49]   Found table with selector: table.generaltable
+[18:43:49]   Grading table ready with rows
+[18:43:51] 
+=== Processing Username: aoc24003 (1/1) ===
+[18:43:51]   Finding student row by username...
+[18:43:52]   Found row for username: aoc24003
+[18:44:07]   Alternative approach needed: Message: 
+Stacktrace:
+#0 0x620a783602ca <unknown>
+#1 0x620a77e07550 <unknown>
+#2 0x620a77e590f0 <unknown>
+#3 0x620a77e592e1 <unknown>
+#4 0x620a77e4cd76 <unknown>
+#5 0x620a77e7ebed <unknown>
+#6 0x620a77e4cc6a <unknown>
+#7 0x620a77e7ed8e <unknown>
+#8 0x620a77ea49e6 <unknown>
+#9 0x620a77e7e993 <unknown>
+#10 0x620a77e4ad6b <unknown>
+#11 0x620a77e4c141 <unknown>
+#12 0x620a783252ab <unknown>
+#13 0x620a783290b9 <unknown>
+#14 0x620a7830c139 <unknown>
+#15 0x620a78329c68 <unknown>
+#16 0x620a782f060f <unknown>
+#17 0x620a7834e1f8 <unknown>
+#18 0x620a7834e3d6 <unknown>
+#19 0x620a7835f5e6 <unknown>
+#20 0x7bf9852a27f1 <unknown>
+#21 0x7bf985333c9c <unknown>
+
+[18:44:07]   Navigating directly to: http://myaoc1.accsoncall.com/mod/assign/view.php?id=4375&userid=168&action=editsubmission
+[18:44:09]   Navigated to submission page via direct URL
+[18:44:09]   On edit page, looking for file input...
+[18:44:09]   Found file manager with selector: .filemanager
+[18:44:24]   Found add button with selector: .fp-btn-add
+[18:44:24]   Clicking add button...
+[18:44:39]   Warning: File upload dialog not visible, proceeding anyway
+[18:44:39]   Uploading file: aoc24003.pdf
+[18:44:39]   Clicking upload button...
+[18:45:10]   Warning: Upload completion not detected, assuming success
+[18:45:10]   Saving changes...
+[18:45:11]   Clicking save button...
+[18:45:20]   Waiting for save confirmation...
+[18:45:23]   ✅ Successfully uploaded for username: aoc24003
+[18:45:23]   Returning to grading list...
+[18:45:34]   Waiting for grading table to load...
+[18:46:04]   Found table with selector: table.generaltable
+[18:46:04]   Grading table ready with rows
+[18:46:06]   Returned to grading list
+[18:46:09] 
+============================================================
+[18:46:09] BATCH UPLOAD COMPLETE - SUMMARY REPORT
+[18:46:09] ============================================================
+[18:46:09] 
+Timestamp: 2025-09-08 18:46:09
+[18:46:09] Total files processed: 1
+[18:46:09] Successful uploads: 1
+[18:46:09] Failed uploads: 0
+[18:46:09] Success rate: 100.0%
+[18:46:09] 
+✅ SUCCESSFUL UPLOADS (1):
+[18:46:09] --------------------------------------------------
+[18:46:09]  1. Username: aoc24003 (aoc24003.pdf)
+

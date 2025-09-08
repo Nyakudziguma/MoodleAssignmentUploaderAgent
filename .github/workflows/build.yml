@@ -28,7 +28,7 @@ jobs:
         
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --windowed --name MoodleUploader --add-data "config.json;." moodle_uploader.py
+        pyinstaller --onefile --windowed --name MoodleUploader --add-data "config.json;." moodle_uploader_v2.py
         
     - name: Upload Windows executable
       uses: actions/upload-artifact@v4
@@ -39,7 +39,7 @@ jobs:
     - name: Build Linux executable
       run: |
         # Create a simple Linux build for testing
-        pyinstaller --onefile --name MoodleUploaderLinux --add-data "config.json:." moodle_uploader.py
+        pyinstaller --onefile --name MoodleUploaderLinux --add-data "config.json:." moodle_uploader_v2.py
         
     - name: Upload Linux executable
       uses: actions/upload-artifact@v4
