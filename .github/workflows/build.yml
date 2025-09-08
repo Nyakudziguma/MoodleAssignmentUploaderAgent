@@ -1,0 +1,48 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller selenium webdriver-manager
+        
+    - name: Build Windows executable
+      run: |
+        pyinstaller --onefile --windowed --name MoodleUploader --add-data "config.json;." moodle_uploader.py
+        
+    - name: Upload Windows executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: MoodleUploader-Windows
+        path: dist/MoodleUploader.exe
+        
+    - name: Build Linux executable
+      run: |
+        # Create a simple Linux build for testing
+        pyinstaller --onefile --name MoodleUploaderLinux --add-data "config.json:." moodle_uploader.py
+        
+    - name: Upload Linux executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: MoodleUploader-Linux
+        path: dist/MoodleUploaderLinux
