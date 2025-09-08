@@ -5,6 +5,7 @@ import os
 import time
 from datetime import datetime
 import json
+import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -186,18 +187,57 @@ class MoodleUploaderApp:
         """Click an element using JavaScript to avoid click interception"""
         self.driver.execute_script("arguments[0].click();", element)
 
-    def find_student_row(self, student_name):
-        """Case-insensitive search for student name in the table"""
-        search_name = student_name.lower()
+    def extract_user_id_from_filename(self, filename):
+        """
+        Extract user ID from filename. Supports multiple formats:
+        - userid.pdf
+        - userid_assignment.pdf
+        - assignment_userid.pdf
+        - any filename containing a user ID pattern
+        """
+        # Remove file extension
+        name_without_ext = os.path.splitext(filename)[0]
         
-        # Find all student name links
-        student_links = self.driver.find_elements(By.CSS_SELECTOR, "td.username a")
+        # Try to find user ID patterns (numbers, specific patterns, etc.)
+        # This regex looks for sequences of numbers that could be user IDs
+        user_id_patterns = re.findall(r'\d+', name_without_ext)
         
-        for link in student_links:
-            if search_name in link.text.lower():
-                return link.find_element(By.XPATH, "./ancestor::tr")
+        if user_id_patterns:
+            # Return the longest numeric pattern (most likely to be user ID)
+            return max(user_id_patterns, key=len)
         
-        raise Exception(f"Student '{student_name}' not found in grading table")
+        # If no numeric patterns found, return the filename without extension
+        return name_without_ext
+
+    def find_student_row_by_user_id(self, user_id):
+        """Find student row by user ID in the table"""
+        # Look for user ID in various places in the table
+        user_id_selectors = [
+            "td.cell.c4 a",  # User ID column
+            "td.idnumber a",  # ID number column
+            "td[data-field='idnumber']",  # ID number data attribute
+            "td a[href*='user=']",  # Links containing user ID
+        ]
+        
+        for selector in user_id_selectors:
+            try:
+                elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                for element in elements:
+                    if user_id in element.text:
+                        return element.find_element(By.XPATH, "./ancestor::tr")
+            except:
+                continue
+        
+        # Fallback: search all table cells for the user ID
+        try:
+            all_cells = self.driver.find_elements(By.CSS_SELECTOR, "td")
+            for cell in all_cells:
+                if user_id in cell.text:
+                    return cell.find_element(By.XPATH, "./ancestor::tr")
+        except:
+            pass
+        
+        raise Exception(f"Student with User ID '{user_id}' not found in grading table")
 
     def wait_for_grading_table(self):
         """Wait for the grading table to be fully loaded and ready"""
@@ -381,16 +421,16 @@ class MoodleUploaderApp:
                 self.progress["value"] = progress
                 self.root.update_idletasks()
                 
-                # Extract student name from filename
-                student_name_from_file = os.path.splitext(filename)[0].replace('_', ' ')
+                # Extract user ID from filename
+                user_id = self.extract_user_id_from_filename(filename)
                 full_file_path = os.path.join(self.folder_path.get(), filename)
-                self.log_message(f"\n=== Processing student: {student_name_from_file} ({i+1}/{total_files}) ===")
+                self.log_message(f"\n=== Processing User ID: {user_id} ({i+1}/{total_files}) ===")
 
                 try:
-                    # 5. FIND THE STUDENT'S ROW (CASE-INSENSITIVE)
-                    self.log_message("  Finding student row...")
-                    student_row = self.find_student_row(student_name_from_file)
-                    self.log_message(f"  Found row for {student_name_from_file}")
+                    # 5. FIND THE STUDENT'S ROW BY USER ID
+                    self.log_message("  Finding student row by User ID...")
+                    student_row = self.find_student_row_by_user_id(user_id)
+                    self.log_message(f"  Found row for User ID: {user_id}")
 
                     # 6. FIND AND CLICK THE ACTION MENU IN THE STATUS COLUMN
                     status_cell = student_row.find_element(By.CLASS_NAME, "status")
@@ -445,7 +485,7 @@ class MoodleUploaderApp:
                     success_found = any(self.driver.find_elements(By.CSS_SELECTOR, indicator) for indicator in success_indicators)
                     
                     if success_found or "view.php" in self.driver.current_url:
-                        self.log_message(f"  ✅ Successfully uploaded for {student_name_from_file}")
+                        self.log_message(f"  ✅ Successfully uploaded for User ID: {user_id}")
                         successful_uploads.append(filename)
                     else:
                         raise Exception("Save confirmation not found")
@@ -457,9 +497,9 @@ class MoodleUploaderApp:
                     self.log_message("  Returned to grading list")
 
                 except Exception as e:
-                    error_msg = f"ERROR: {filename} - {student_name_from_file} - {str(e)}"
+                    error_msg = f"ERROR: {filename} - User ID: {user_id} - {str(e)}"
                     self.log_message(f"  ❌ {error_msg}")
-                    failed_uploads.append((filename, student_name_from_file, str(e)))
+                    failed_uploads.append((filename, user_id, str(e)))
                     
                     try:
                         self.driver.get(grading_url)
@@ -493,14 +533,14 @@ class MoodleUploaderApp:
                 self.log_message(f"\n✅ SUCCESSFUL UPLOADS ({len(successful_uploads)}):")
                 self.log_message("-" * 50)
                 for i, filename in enumerate(successful_uploads, 1):
-                    student_name = os.path.splitext(filename)[0].replace('_', ' ')
-                    self.log_message(f"{i:2d}. {student_name} ({filename})")
+                    user_id = self.extract_user_id_from_filename(filename)
+                    self.log_message(f"{i:2d}. User ID: {user_id} ({filename})")
             
             if failed_uploads:
                 self.log_message(f"\n❌ FAILED UPLOADS ({len(failed_uploads)}):")
                 self.log_message("-" * 50)
-                for i, (filename, student_name, error) in enumerate(failed_uploads, 1):
-                    self.log_message(f"{i:2d}. {student_name} ({filename})")
+                for i, (filename, user_id, error) in enumerate(failed_uploads, 1):
+                    self.log_message(f"{i:2d}. User ID: {user_id} ({filename})")
                     self.log_message(f"    Error: {error[:80]}{'...' if len(error) > 80 else ''}")
 
         except Exception as e:
