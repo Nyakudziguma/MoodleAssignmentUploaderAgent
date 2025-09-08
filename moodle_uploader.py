@@ -17,7 +17,7 @@ class MoodleUploaderApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Moodle Assignment Uploader")
-        self.root.geometry("800x700")
+        self.root.geometry("800x750")  # Increased height for the new button
         self.root.resizable(True, True)
         
         # Configuration variables
@@ -31,6 +31,7 @@ class MoodleUploaderApp:
         # Status variables
         self.is_running = False
         self.driver = None
+        self.report_data = ""
         
         self.setup_ui()
         self.load_config()
@@ -87,6 +88,7 @@ class MoodleUploaderApp:
         ttk.Button(button_frame, text="Save Configuration", command=self.save_config).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Start Upload", command=self.start_upload).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Stop", command=self.stop_upload).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Download Report", command=self.download_report).pack(side=tk.LEFT, padx=5)
         
         # Progress section
         progress_frame = ttk.LabelFrame(main_frame, text="Progress", padding="10")
@@ -153,6 +155,74 @@ class MoodleUploaderApp:
         self.status_text.config(state=tk.DISABLED)
         self.status_label.config(text=message)
         self.root.update_idletasks()
+    
+    def download_report(self):
+        """Save the report to a text file"""
+        if not self.report_data:
+            messagebox.showinfo("Info", "No report data available. Run an upload first.")
+            return
+            
+        # Ask user where to save the report
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            title="Save Report As",
+            initialfile=f"moodle_upload_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(self.report_data)
+                self.log_message(f"Report saved to: {file_path}")
+                messagebox.showinfo("Success", f"Report saved successfully!\n{file_path}")
+            except Exception as e:
+                self.log_message(f"Error saving report: {str(e)}")
+                messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+    
+    def generate_report(self, successful_uploads, failed_uploads, total_files, timestamp):
+        """Generate a detailed report string"""
+        report = "=" * 60 + "\n"
+        report += "MOODLE ASSIGNMENT UPLOAD REPORT\n"
+        report += "=" * 60 + "\n\n"
+        
+        report += f"Timestamp: {timestamp}\n"
+        report += f"Moodle URL: {self.moodle_url.get()}\n"
+        report += f"Course ID: {self.course_id.get()}\n"
+        report += f"Assignment ID: {self.assignment_id.get()}\n"
+        report += f"Folder: {self.folder_path.get()}\n\n"
+        
+        report += f"Total files processed: {total_files}\n"
+        report += f"Successful uploads: {len(successful_uploads)}\n"
+        report += f"Failed uploads: {len(failed_uploads)}\n"
+        
+        if total_files > 0:
+            success_rate = (len(successful_uploads) / total_files) * 100
+            report += f"Success rate: {success_rate:.1f}%\n"
+        
+        report += "\n" + "=" * 60 + "\n"
+        
+        if successful_uploads:
+            report += f"✅ SUCCESSFUL UPLOADS ({len(successful_uploads)}):\n"
+            report += "-" * 50 + "\n"
+            for i, filename in enumerate(successful_uploads, 1):
+                user_id = self.extract_user_id_from_filename(filename)
+                report += f"{i:2d}. User ID: {user_id} ({filename})\n"
+        
+        if failed_uploads:
+            report += f"\n❌ FAILED UPLOADS ({len(failed_uploads)}):\n"
+            report += "-" * 50 + "\n"
+            for i, (filename, user_id, error) in enumerate(failed_uploads, 1):
+                report += f"{i:2d}. User ID: {user_id} ({filename})\n"
+                report += f"    Error: {error}\n"
+        
+        # Add the log content
+        report += "\n" + "=" * 60 + "\n"
+        report += "PROCESS LOG:\n"
+        report += "-" * 50 + "\n"
+        report += self.status_text.get("1.0", tk.END)
+        
+        return report
     
     def start_upload(self):
         if self.is_running:
@@ -515,11 +585,11 @@ class MoodleUploaderApp:
 
             # FINAL REPORT
             self.progress["value"] = 100
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
             self.log_message("\n" + "="*60)
             self.log_message("BATCH UPLOAD COMPLETE - SUMMARY REPORT")
             self.log_message("="*60)
-            
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             self.log_message(f"\nTimestamp: {timestamp}")
             self.log_message(f"Total files processed: {total_files}")
@@ -542,6 +612,10 @@ class MoodleUploaderApp:
                 for i, (filename, user_id, error) in enumerate(failed_uploads, 1):
                     self.log_message(f"{i:2d}. User ID: {user_id} ({filename})")
                     self.log_message(f"    Error: {error[:80]}{'...' if len(error) > 80 else ''}")
+
+            # Generate and store the full report
+            self.report_data = self.generate_report(successful_uploads, failed_uploads, total_files, timestamp)
+            self.log_message("\nReport generated. Click 'Download Report' to save it.")
 
         except Exception as e:
             self.log_message(f"Fatal error: {str(e)}")
